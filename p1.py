@@ -1,51 +1,51 @@
-class Grammar:
-    def __init__(self, filename):
-        self.start_symbol = None
+class CFG:
+    def __init__(self, filepath):
+        self.productions = {}         
         self.non_terminals = set()
         self.terminals = set()
-        self.productions = {}
+        self.start_symbol = None
+        self._read_grammar(filepath)
 
-        self.read_grammar(filename)
+    def _read_grammar(self, filepath):
+        with open(filepath, 'r', encoding='utf-8') as file:
+            for line in file:
+                line = line.strip()
+                if not line or '->' not in line:
+                    continue
 
-    def read_grammar(self, filename):
-        with open(filename, 'r', encoding='utf-8') as f:
-            lines = [line.strip() for line in f if line.strip()]
+                left, right = line.split('->')
+                left = left.strip()
+                rights = [r.strip().split() for r in right.strip().split('|')]
 
-        for idx, line in enumerate(lines):
-            # تقسیم سمت چپ و راست قاعده تولید
-            if '->' not in line:
-                raise ValueError(f"Invalid grammar line: {line}")
-            left, right = line.split('->')
-            left = left.strip()
-            self.non_terminals.add(left)
-            if idx == 0:
-                self.start_symbol = left
+                if self.start_symbol is None:
+                    self.start_symbol = left
 
-            # تقسیم سمت راست به قواعد جداگانه با '|'
-            right_parts = right.strip().split('|')
-            productions = []
-            for part in right_parts:
-                symbols = part.strip().split()
-                productions.append(symbols)
-                for symbol in symbols:
-                    if not symbol.isupper() and symbol != 'ε' and symbol not in self.non_terminals:
-                        self.terminals.add(symbol)
+                self.non_terminals.add(left)
 
-            if left not in self.productions:
-                self.productions[left] = []
-            self.productions[left].extend(productions)
+                if left not in self.productions:
+                    self.productions[left] = []
 
-    def show(self):
-        print("Start Symbol:", self.start_symbol)
+                for prod in rights:
+                    self.productions[left].append(prod)
+
+        all_symbols = set()
+        for rhs_list in self.productions.values():
+            for rhs in rhs_list:
+                all_symbols.update(rhs)
+        
+        self.terminals = all_symbols - self.non_terminals - {'ε'}
+
+    def display(self):
+        print(f"Start Symbol: {self.start_symbol}")
         print("Non-terminals:", self.non_terminals)
         print("Terminals:", self.terminals)
         print("Productions:")
-        for head, rules in self.productions.items():
+        for nt, rules in self.productions.items():
             for rule in rules:
-                print(f"  {head} -> {' '.join(rule)}")
+                print(f"  {nt} -> {' '.join(rule)}")
 
 
-# 🧪 استفاده:
 if __name__ == "__main__":
-    grammar = Grammar("grammar.txt")
-    grammar.show()
+    grammar = CFG("grammar.txt")
+    grammar.display()
+
