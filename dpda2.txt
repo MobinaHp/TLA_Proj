@@ -1,0 +1,11 @@
+q0 q1 q2
+a b
+Z X
+q0
+Z
+q2
+q0 a Z q0 XZ
+q0 a X q0 XX
+q0 b X q1 e
+q1 b X q1 e
+q1 e Z q2 Z
