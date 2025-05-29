@@ -1,4 +1,7 @@
 from parse_tree import ParseTreeNode
+import re
+
+
 class DPDA:
     """
     Represents a Deterministic Pushdown Automaton (DPDA) for LL(1) parsing
@@ -14,32 +17,35 @@ class DPDA:
         _terminals (set): A reference to the CFG's terminal set.
         root_node (ParseTreeNode): The root of the parse tree.
     """
+
     def __init__(self, trf, input_tokens, start_symbol, terminals):
         self.head = 0
         self.trf = trf
-        self.state = 'q0' # LL(1) parsers typically operate in a single state 'q0'
-        
+        self.state = "q0"  # LL(1) parsers typically operate in a single state 'q0'
+
         # Ensure input_tokens is always a list and ends with '$'
         self.input = list(input_tokens)
-        if not self.input or self.input[-1] != '$':
+        if not self.input or self.input[-1] != "$":
             # Add end-of-input marker if not present. This is crucial for parsing.
-            self.input.append('$') 
-        
+            self.input.append("$")
+
         # Initialize the root node for the parse tree
         self.root_node = ParseTreeNode(start_symbol)
         # Stack now holds (grammar_symbol, parse_tree_node) tuples
         # Initial stack configuration: Bottom marker 'Z' and Start Symbol's node
-        self.stack = [('Z', None), (start_symbol, self.root_node)]
-        self._terminals = terminals # Store the terminals set
+        self.stack = [("Z", None), (start_symbol, self.root_node)]
+        self._terminals = terminals  # Store the terminals set
 
     def _print_status(self):
         """
         Prints the current state of the DPDA (remaining input, stack symbols, and current state).
         """
-        current_input_display = ' '.join(self.input[self.head:])
+        current_input_display = " ".join(self.input[self.head :])
         # Only display the grammar symbols from the stack for readability
-        stack_symbols_display = ''.join([s for s, _ in self.stack])
-        print(f'{current_input_display:20s} [\'{stack_symbols_display}\'] {self.state:5s}')
+        stack_symbols_display = "".join([s for s, _ in self.stack])
+        print(
+            f"{current_input_display:20s} ['{stack_symbols_display}'] {self.state:5s}"
+        )
 
     def run(self):
         """
@@ -51,7 +57,7 @@ class DPDA:
 
         while True:
             current_input_symbol = self.input[self.head]
-            
+
             if not self.stack:
                 print("Rejected: Stack is empty prematurely.")
                 return None
@@ -60,44 +66,89 @@ class DPDA:
             stack_top_symbol, stack_top_node = self.stack[-1]
 
             # 1. Acceptance Condition: Input exhausted and only 'Z' (bottom marker) left on stack
-            if stack_top_symbol == 'Z' and current_input_symbol == '$':
+            if stack_top_symbol == "Z" and current_input_symbol == "$":
                 print("Accepted")
-                return self.root_node # Return the completed parse tree root
+                return self.root_node  # Return the completed parse tree root
 
             # 2. Terminal Matching (Shift Action): If stack top is a terminal and matches current input
-            if stack_top_symbol in self._terminals and stack_top_symbol == current_input_symbol: 
-                self.stack.pop() # Pop the matching terminal and its node
-                stack_top_node.token = current_input_symbol # Assign the actual token value to the node
-                self.head += 1 # Consume the input symbol
+            if stack_top_symbol in self._terminals and (
+                stack_top_symbol == current_input_symbol
+                or re.match(stack_top_symbol, current_input_symbol)
+            ):
+                # if stack_top_symbol in self._terminals and re.match(
+                #     current_input_symbol, stack_top_symbol
+                # ):
+                self.stack.pop()  # Pop the matching terminal and its node
+                stack_top_node.token = (
+                    current_input_symbol  # Assign the actual token value to the node
+                )
+                self.head += 1  # Consume the input symbol
                 self._print_status()
                 continue
 
             # 3. Non-terminal Expansion (Reduce Action): If stack top is a non-terminal
             # Look up the parsing table (represented by self.trf) for the appropriate production.
             transition_key = (self.state, current_input_symbol, stack_top_symbol)
+            # print(current_input_symbol, stack_top_symbol, stack_top_symbol)
             next_state, push_string_rhs = self.trf.get(transition_key, (None, None))
+            print("\n\nNice one")
+            print(self.trf.get(transition_key, (None, None)))
+            temp_dict = {
+                key: value
+                for key, value in self.trf.items()
+                if re.fullmatch(key[1], current_input_symbol)
+                and key[0] == self.state
+                and key[2] == stack_top_symbol
+            }
+            if next_state is None and len(temp_dict) == 1:
+                print("does not work like normal , probably regex")
+                next_state, push_string_rhs = list(temp_dict.values())[0]
+            print(
+                {
+                    key: value
+                    for key, value in self.trf.items()
+                    if re.fullmatch(key[1], current_input_symbol)
+                    and key[0] == self.state
+                    and key[2] == stack_top_symbol
+                }
+            )
 
             if next_state is not None:
+                # print(current_input_symbol, stack_top_symbol, stack_top_symbol)
                 # Pop the non-terminal and its associated node from the stack
                 popped_symbol, popped_node = self.stack.pop()
+                # print(popped_symbol, popped_node)
 
-                if push_string_rhs != 'eps': # If it's not an epsilon production
+                if push_string_rhs != "eps":  # If it's not an epsilon production
                     # Split the RHS string into individual symbols (e.g., 'T E_prime' -> ['T', 'E_prime'])
                     rhs_symbols = push_string_rhs.split()
-                    
+                    # print(rhs_symbols)
+                    # print([s for s in rhs_symbols if re.match(s, current_input_symbol)])
+
                     # Push symbols onto the stack in reverse order of the RHS
                     # Create a new ParseTreeNode for each symbol and add it as a child
+
                     for symbol in reversed(rhs_symbols):
+                        # for symbol in reversed(
+                        #     [s for s in rhs_symbols if re.match(s, current_input_symbol)]
+                        # ):
                         child_node = ParseTreeNode(symbol)
-                        popped_node.add_child(child_node) # Add this new node as a child to the popped_node
-                        self.stack.append((symbol, child_node)) # Push (symbol, node) tuple onto DPDA stack
-                
+                        popped_node.add_child(
+                            child_node
+                        )  # Add this new node as a child to the popped_node
+                        self.stack.append(
+                            (symbol, child_node)
+                        )  # Push (symbol, node) tuple onto DPDA stack
+
                 # State remains 'q0'. Input head is NOT advanced.
                 self._print_status()
             else:
                 # No valid transition found - syntax error.
-                print(f"Rejected: No valid transition for ({self.state}, {current_input_symbol}, {stack_top_symbol}).")
-                return None # Indicate parsing failure
+                print(
+                    f"Rejected: No valid transition for ({self.state}, {current_input_symbol}, {stack_top_symbol})."
+                )
+                return None  # Indicate parsing failure
+
 
 def load_transitions(filename):
     """
@@ -105,10 +156,10 @@ def load_transitions(filename):
     (This function remains unchanged from previous versions)
     """
     trf = {}
-    with open(filename, 'r', encoding='utf-8') as f:
+    with open(filename, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
             parts = line.split()
             if len(parts) != 5:

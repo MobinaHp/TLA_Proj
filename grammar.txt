@@ -1,6 +1,7 @@
 START=S
-NON_TERMINALS=S,A,B
-TERMINALS=a,b,c,$,eps
-S -> A B c
-A -> a | eps
+NON_TERMINALS=S,A,B,C
+TERMINALS=a,b,c,$,[a-z],\d+,eps
+S -> A B C
+A -> a A | eps
 B -> b | eps
+C -> [a-z] C | \d+ | eps
