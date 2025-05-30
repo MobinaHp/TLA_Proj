@@ -61,7 +61,7 @@ class DPDA:
                 and key[0] == self.state
                 and key[2] == stack_top_symbol
             }
-            if next_state is None and len(temp_dict) == 1:
+            if next_state is None and len(temp_dict) != 0:
                 print("does not work like normal , probably regex")
                 next_state, push_string_rhs = list(temp_dict.values())[0]
             print(

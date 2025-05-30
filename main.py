@@ -89,9 +89,6 @@ def main():
         user_input = input(
             "\nEnter input string (e.g., id + id * id $), or 'q' to quit: "
         )
-        user_input = user_input.replace("\n\r", " ")
-        user_input = user_input.replace("\r\n", " ")
-        user_input = user_input.replace("\n", " ")
         if user_input.lower() == "file":
             file_path = "./input.txt"
             if os.path.exists(file_path):
