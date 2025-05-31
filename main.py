@@ -87,7 +87,7 @@ def main():
 
     while True:
         user_input = input(
-            "\nEnter input string (e.g., id + id * id $), or 'q' to quit: "
+            "\nEnter input string, or file to read input.txt or 'q' to quit: "
         )
         if user_input.lower() == "file":
             file_path = "./input.txt"

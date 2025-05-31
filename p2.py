@@ -52,8 +52,9 @@ class DPDA:
 
             transition_key = (self.state, current_input_symbol, stack_top_symbol)
             next_state, push_string_rhs = self.trf.get(transition_key, (None, None))
-            print("\n\nNice one")
-            print(self.trf.get(transition_key, (None, None)))
+            # print("\n\nNice one")
+            # print(transition_key)
+            # print(self.trf.get(transition_key, (None, None)))
             temp_dict = {
                 key: value
                 for key, value in self.trf.items()
@@ -62,17 +63,17 @@ class DPDA:
                 and key[2] == stack_top_symbol
             }
             if next_state is None and len(temp_dict) != 0:
-                print("does not work like normal , probably regex")
+                print("Out of normal ones , using regex")
                 next_state, push_string_rhs = list(temp_dict.values())[0]
-            print(
-                {
-                    key: value
-                    for key, value in self.trf.items()
-                    if re.fullmatch(key[1], current_input_symbol)
-                    and key[0] == self.state
-                    and key[2] == stack_top_symbol
-                }
-            )
+            # print(
+            #     {
+            #         key: value
+            #         for key, value in self.trf.items()
+            #         if re.fullmatch(key[1], current_input_symbol)
+            #         and key[0] == self.state
+            #         and key[2] == stack_top_symbol
+            #     }
+            # )
 
             if next_state is not None:
                 popped_symbol, popped_node = self.stack.pop()
